@@ -7,6 +7,7 @@ import SessionController from './app/controllers/SessionController';
 import ExerciseController from './app/controllers/ExerciseController';
 import WorkoutController from './app/controllers/WorkoutController';
 import WorkoutExerciseController from './app/controllers/WorkoutExerciseController';
+import StudentWorkoutController from './app/controllers/StudentWorkoutController';
 
 import authMiddleware from './app/middlewares/auth';
 
@@ -37,5 +38,8 @@ router.get('/workouts/:id', WorkoutController.find);
 router.put('/workouts/:id', WorkoutController.update);
 
 router.delete('/workout/exercise/:id', WorkoutExerciseController.delete);
+
+router.get('/student/:studentNick/workouts', StudentWorkoutController.index);
+router.post('/student/workout/finish', StudentWorkoutController.store);
 
 export default router;

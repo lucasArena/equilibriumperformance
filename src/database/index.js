@@ -9,6 +9,7 @@ import Category from '../app/models/Category';
 import Exercise from '../app/models/Exercise';
 import Workout from '../app/models/Workout';
 import WorkoutExercise from '../app/models/WorkoutExercise';
+import StudentWorkout from '../app/models/StudentWorkout';
 
 const models = [
   User,
@@ -18,6 +19,7 @@ const models = [
   Exercise,
   Workout,
   WorkoutExercise,
+  StudentWorkout,
 ];
 
 class Database {
