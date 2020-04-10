@@ -1,4 +1,5 @@
 import * as Yup from 'yup';
+import { Op } from 'sequelize';
 
 import Workout from '../models/Workout';
 import WorkoutExercise from '../models/WorkoutExercise';
@@ -6,6 +7,18 @@ import Exercise from '../models/Exercise';
 
 class WorkoutController {
   async index(req, res) {
+    const schema = Yup.object().shape({
+      limit: Yup.number(),
+      offset: Yup.number(),
+      filter: Yup.string(),
+    });
+
+    if (!(await schema.isValid(req.query))) {
+      return res.status(400).json({ error: 'Bad request' });
+    }
+
+    const { offset = 1, limit = 5, filter = '' } = req.query;
+
     const workout = await Workout.findAll({
       include: [
         {
@@ -17,8 +30,20 @@ class WorkoutController {
               as: 'exercise',
             },
           ],
+          order: ['createdAt', 'ASC'],
         },
       ],
+      limit,
+      offset: (offset - 1) * limit,
+      where: {
+        [Op.or]: [
+          {
+            description: {
+              [Op.like]: `%${filter}%`,
+            },
+          },
+        ],
+      },
     });
 
     return res.json(workout);
@@ -46,7 +71,8 @@ class WorkoutController {
     const savedExercises = await Exercise.findAll();
 
     const exerciseNotExist = exercises.filter(
-      (exercise) => !savedExercises.some((e) => e.id === exercise.exercise_id)
+      (exercise) =>
+        !savedExercises.some((e) => e.id === Number(exercise.exercise_id))
     );
 
     if (exerciseNotExist.length) {
@@ -105,7 +131,7 @@ class WorkoutController {
       sequence: Yup.string().required(),
       exercises: Yup.array().of(
         Yup.object().shape({
-          id: Yup.number().required(),
+          id: Yup.number(),
           exercise_id: Yup.string().required(),
           repetitions: Yup.string().required(),
           series: Yup.string().required(),
@@ -137,7 +163,8 @@ class WorkoutController {
     const savedExercises = await Exercise.findAll();
 
     const exerciseNotExist = exercises.filter(
-      (exercise) => !savedExercises.some((e) => e.id === exercise.exercise_id)
+      (exercise) =>
+        !savedExercises.some((e) => e.id === Number(exercise.exercise_id))
     );
 
     if (exerciseNotExist.length) {
@@ -153,18 +180,20 @@ class WorkoutController {
 
     const updatedExercises = await Promise.all(
       exercises.map(
-        async ({ id: workout_id, exercise_id, repetitions, series }) => {
-          const exercise = await WorkoutExercise.findByPk(workout_id);
-          const response = await exercise.update(
+        async ({ id: idWorkoutExercise, exercise_id, repetitions, series }) => {
+          const [exercise] = await WorkoutExercise.upsert(
             {
+              id: idWorkoutExercise,
               exercise_id,
+              workout_id: workout.id,
               repetitions,
               series,
             },
-            { new: true }
+            {
+              returning: true,
+            }
           );
-
-          return response;
+          return exercise;
         }
       )
     );

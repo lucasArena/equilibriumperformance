@@ -3,6 +3,8 @@ import * as Yup from 'yup';
 import StudentWorkout from '../models/StudentWorkout';
 import Student from '../models/Student';
 import Workout from '../models/Workout';
+import Exercise from '../models/Exercise';
+import Category from '../models/Category';
 import WorkoutExercise from '../models/WorkoutExercise';
 
 class StudentWorkoutController {
@@ -21,6 +23,18 @@ class StudentWorkoutController {
           {
             model: WorkoutExercise,
             as: 'exercises',
+            include: [
+              {
+                model: Exercise,
+                as: 'exercise',
+                include: [
+                  {
+                    model: Category,
+                    as: 'category',
+                  },
+                ],
+              },
+            ],
           },
         ],
       }),

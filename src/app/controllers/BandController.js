@@ -3,6 +3,11 @@ import * as Yup from 'yup';
 import Band from '../models/Band';
 
 class BandController {
+  async index(req, res) {
+    const bands = await Band.findAll();
+    return res.json(bands);
+  }
+
   async store(req, res) {
     const schema = Yup.object().shape({
       name: Yup.string().required(),

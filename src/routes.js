@@ -3,6 +3,7 @@ import express from 'express';
 import UserController from './app/controllers/UserController';
 import StudentController from './app/controllers/StudentController';
 import BandController from './app/controllers/BandController';
+import CategoryController from './app/controllers/CategoryController';
 import SessionController from './app/controllers/SessionController';
 import ExerciseController from './app/controllers/ExerciseController';
 import WorkoutController from './app/controllers/WorkoutController';
@@ -24,7 +25,10 @@ router.post('/students', StudentController.store);
 router.put('/students/:id', StudentController.update);
 router.delete('/students/:id', StudentController.delete);
 
+router.get('/bands', BandController.index);
 router.post('/bands', BandController.store);
+
+router.get('/categories', CategoryController.index);
 
 router.get('/exercises', ExerciseController.index);
 router.post('/exercises', ExerciseController.store);

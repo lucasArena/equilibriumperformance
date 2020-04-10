@@ -1,11 +1,41 @@
 import * as Yup from 'yup';
+import { Op } from 'sequelize';
 
 import Student from '../models/Student';
 import Band from '../models/Band';
 
 class StudentController {
   async index(req, res) {
-    const students = await Student.findAll();
+    const schema = Yup.object().shape({
+      limit: Yup.number(),
+      offset: Yup.number(),
+      filter: Yup.string(),
+    });
+
+    if (!(await schema.isValid(req.query))) {
+      return res.status(400).json({ error: 'Bad request' });
+    }
+
+    const { offset = 1, limit = 5, filter = '' } = req.query;
+
+    const students = await Student.findAll({
+      offset: (offset - 1) * limit,
+      limit,
+      where: {
+        [Op.or]: [
+          {
+            name: {
+              [Op.like]: `%${filter}%`,
+            },
+          },
+          {
+            nickname: {
+              [Op.like]: `%${filter}%`,
+            },
+          },
+        ],
+      },
+    });
     return res.json(students);
   }
 
@@ -19,7 +49,7 @@ class StudentController {
     });
 
     if (!(await schema.isValid(req.body))) {
-      return res.json({ error: 'Invalid request' });
+      return res.status(400).json({ error: 'Invalid request' });
     }
 
     const { name, nickname, email, birth, band_id } = req.body;
@@ -99,17 +129,6 @@ class StudentController {
 
     const { id } = req.params;
     const { name, nickname, email, birth } = req.body;
-
-    const studentExists = await Student.findOne({
-      paranoid: false,
-      where: {
-        email,
-      },
-    });
-
-    if (studentExists) {
-      return res.status(400).json({ error: 'User already exists' });
-    }
 
     const student = await Student.findByPk(id);
 

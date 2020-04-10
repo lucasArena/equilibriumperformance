@@ -1,11 +1,36 @@
 import * as Yup from 'yup';
+import { Op } from 'sequelize';
 
 import Exercise from '../models/Exercise';
 import Category from '../models/Category';
 
 class ExerciseController {
   async index(req, res) {
-    const exercises = await Exercise.findAll();
+    const schema = Yup.object().shape({
+      limit: Yup.number(),
+      offset: Yup.number(),
+      filter: Yup.string(),
+    });
+
+    if (!(await schema.isValid(req.query))) {
+      return res.status(400).json({ error: 'Bad request' });
+    }
+
+    const { offset = 1, limit = 5, filter = '' } = req.query;
+
+    const exercises = await Exercise.findAll({
+      offset: (offset - 1) * limit,
+      limit,
+      where: {
+        [Op.or]: [
+          {
+            name: {
+              [Op.like]: `%${filter}%`,
+            },
+          },
+        ],
+      },
+    });
     return res.json(exercises);
   }
 
