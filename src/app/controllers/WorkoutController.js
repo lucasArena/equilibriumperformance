@@ -4,6 +4,7 @@ import { Op } from 'sequelize';
 import Workout from '../models/Workout';
 import WorkoutExercise from '../models/WorkoutExercise';
 import Exercise from '../models/Exercise';
+import Band from '../models/Band';
 
 class WorkoutController {
   async index(req, res) {
@@ -19,7 +20,7 @@ class WorkoutController {
 
     const { offset = 1, limit = 5, filter = '' } = req.query;
 
-    const workout = await Workout.findAll({
+    const workouts = await Workout.findAll({
       include: [
         {
           model: WorkoutExercise,
@@ -58,15 +59,16 @@ class WorkoutController {
       },
     });
 
-    res.header('X-TOTAL-COUNT', workout.length);
+    res.header('X-TOTAL-COUNT', workouts.length);
 
-    return res.json({ count, workout });
+    return res.json({ count, workouts });
   }
 
   async store(req, res) {
     const schema = Yup.object().shape({
       description: Yup.string().required(),
       sequence: Yup.string().required(),
+      band_id: Yup.number().required(),
       exercises: Yup.array().of(
         Yup.object().shape({
           exercise_id: Yup.string().required(),
@@ -80,7 +82,13 @@ class WorkoutController {
       return res.status(400).json({ error: 'Invalid request' });
     }
 
-    const { description, sequence, exercises } = req.body;
+    const { description, sequence, band_id, exercises } = req.body;
+
+    const bandExists = await Band.findByPk(band_id);
+
+    if (!bandExists) {
+      return res.status(400).json({ error: 'Band does not exists' });
+    }
 
     const savedExercises = await Exercise.findAll();
 
@@ -100,6 +108,7 @@ class WorkoutController {
         description,
         sequence,
         exercises,
+        band_id,
       },
       {
         include: [
@@ -143,9 +152,10 @@ class WorkoutController {
     const schema = Yup.object().shape({
       description: Yup.string().required(),
       sequence: Yup.string().required(),
+      band_id: Yup.string().required(),
       exercises: Yup.array().of(
         Yup.object().shape({
-          id: Yup.number(),
+          id: Yup.string(),
           exercise_id: Yup.string().required(),
           repetitions: Yup.string().required(),
           series: Yup.string().required(),
@@ -166,7 +176,13 @@ class WorkoutController {
     }
 
     const { id } = req.params;
-    const { description, sequence, exercises } = req.body;
+    const { description, sequence, band_id, exercises } = req.body;
+
+    const bandExists = await Band.findByPk(band_id);
+
+    if (!bandExists) {
+      return res.status(400).json({ error: 'Band does not exists' });
+    }
 
     const workout = await Workout.findByPk(id);
 
@@ -190,6 +206,7 @@ class WorkoutController {
     await workout.update({
       description,
       sequence,
+      band_id,
     });
 
     const updatedExercises = await Promise.all(
@@ -215,6 +232,7 @@ class WorkoutController {
     const response = {
       description,
       sequence,
+      band_id,
       exercises: updatedExercises,
     };
 

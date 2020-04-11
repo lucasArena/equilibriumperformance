@@ -2,6 +2,7 @@ import * as Yup from 'yup';
 
 import StudentWorkout from '../models/StudentWorkout';
 import Student from '../models/Student';
+import Band from '../models/Band';
 import Workout from '../models/Workout';
 import Exercise from '../models/Exercise';
 import Category from '../models/Category';
@@ -17,7 +18,7 @@ class StudentWorkoutController {
       return res.status(400).json({ error: 'Student does not exists' });
     }
 
-    const [workouts, finishWorkouts] = await Promise.all([
+    const [workouts, finishWorkouts, studentInfo] = await Promise.all([
       Workout.findAll({
         include: [
           {
@@ -36,17 +37,39 @@ class StudentWorkoutController {
               },
             ],
           },
+          {
+            model: Band,
+            as: 'band',
+            attributes: ['id', 'name', 'color'],
+          },
         ],
       }),
       StudentWorkout.findAll({ where: { student_id: student.id } }),
+      Student.findByPk(student.id, {
+        include: [
+          {
+            model: Band,
+            as: 'band',
+            attributes: ['name', 'color'],
+          },
+        ],
+        attributes: ['id', 'name', 'band_id'],
+      }),
     ]);
 
-    const formattedWorkouts = workouts.map((workout) => ({
-      workout,
-      finished: !!finishWorkouts.some((w) => w.workout_id === workout.id),
-    }));
+    const formattedWorkouts = workouts.map((workout) => {
+      const finished = !!finishWorkouts.some(
+        (w) => w.workout_id === workout.id
+      );
 
-    return res.json(formattedWorkouts);
+      return {
+        workout,
+        current: finished,
+        finished,
+      };
+    });
+
+    return res.json({ studentInfo, workouts: formattedWorkouts });
   }
 
   async store(req, res) {

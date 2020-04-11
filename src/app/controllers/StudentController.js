@@ -133,6 +133,7 @@ class StudentController {
       nickname: Yup.string().required(),
       email: Yup.string().email().required(),
       birth: Yup.date().required(),
+      band_id: Yup.number().required(),
     });
 
     if (!(await schema.isValid(req.body))) {
@@ -148,7 +149,13 @@ class StudentController {
     }
 
     const { id } = req.params;
-    const { name, nickname, email, birth } = req.body;
+    const { name, nickname, email, birth, band_id } = req.body;
+
+    const bandExists = await Band.findByPk(band_id);
+
+    if (!bandExists) {
+      return res.status(400).json({ error: 'Band does not exists' });
+    }
 
     const student = await Student.findByPk(id);
 
@@ -162,6 +169,7 @@ class StudentController {
         nickname,
         email,
         birth,
+        band_id,
       },
       { new: true }
     );
