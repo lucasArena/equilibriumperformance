@@ -31,7 +31,22 @@ class ExerciseController {
         ],
       },
     });
-    return res.json(exercises);
+
+    const count = await Exercise.count({
+      where: {
+        [Op.or]: [
+          {
+            name: {
+              [Op.like]: `%${filter}%`,
+            },
+          },
+        ],
+      },
+    });
+
+    res.header('X-TOTAL-COUNT', exercises.length);
+
+    return res.json({ count, exercises });
   }
 
   async store(req, res) {

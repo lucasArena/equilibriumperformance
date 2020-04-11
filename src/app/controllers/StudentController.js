@@ -36,7 +36,27 @@ class StudentController {
         ],
       },
     });
-    return res.json(students);
+
+    const count = await Student.count({
+      where: {
+        [Op.or]: [
+          {
+            name: {
+              [Op.like]: `%${filter}%`,
+            },
+          },
+          {
+            nickname: {
+              [Op.like]: `%${filter}%`,
+            },
+          },
+        ],
+      },
+    });
+
+    res.header('X-TOTAL-COUNT', students.length);
+
+    return res.json({ count, students });
   }
 
   async store(req, res) {
